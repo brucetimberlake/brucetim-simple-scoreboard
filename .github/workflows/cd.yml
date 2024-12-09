@@ -1,10 +1,16 @@
 ---
 name: Continuous Delivery
 
-# Trigger this workflow manually or by pushing commits to any branch.
+# Trigger this workflow manually or after successful testing.
 on:
-  push:
   workflow_dispatch:
+  workflow_run:
+    branches:
+      - main
+    workflows:
+      - Continuous Integration
+    types:
+      - completed
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,9 +20,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # Build the deployment package.
+      # Use the same hardware architecture and the same Python version
+      # as the Lambda function.
       - uses: actions/checkout@v4
-      - run: zip lambda-function.zip *.py *.html
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Build the deployment package.
+      - run: |
+          pip install --no-compile --target build .
+          cd build
+          zip -r ../lambda-function.zip .
 
       # Log into AWS.
       - uses: aws-actions/configure-aws-credentials@v4
@@ -40,3 +55,4 @@ jobs:
             {"Environment": "Development", "Service": "Scorekeeping"}
       - if: steps.plan.outputs.exitcode == 2
         run: tofu apply -auto-approve -no-color terraform.tfplan
+
