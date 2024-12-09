@@ -55,4 +55,3 @@ jobs:
             {"Environment": "Development", "Service": "Scorekeeping"}
       - if: steps.plan.outputs.exitcode == 2
         run: tofu apply -auto-approve -no-color terraform.tfplan
-
