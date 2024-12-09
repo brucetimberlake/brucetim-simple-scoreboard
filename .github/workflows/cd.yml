@@ -18,6 +18,16 @@ jobs:
       - uses: actions/checkout@v4
       - run: zip lambda-function.zip *.py *.html
 
+      # Log into AWS.
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: ${{ secrets.IAM_ROLE_TO_ASSUME || null }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID || null }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY || null }}
+          mask-aws-account-id: true
+          role-skip-session-tagging: true
+
       # Initialize OpenTofu and deploy the stack.
       - uses: opentofu/setup-opentofu@v1.0.2
       - run: tofu init
