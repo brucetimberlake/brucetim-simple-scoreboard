@@ -34,3 +34,75 @@ resource "aws_dynamodb_table" "this" {
     type = "S"
   }
 }
+
+
+# Grant the Lambda function read-only access to players' scores.
+data "aws_iam_policy_document" "lambda_trust" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.${data.aws_partition.current.dns_suffix}"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+resource "aws_iam_role" "this" {
+  name               = var.STACK_NAME
+  assume_role_policy = data.aws_iam_policy_document.lambda_trust.json
+}
+
+data "aws_iam_policy_document" "this" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+    ]
+    resources = ["${aws_cloudwatch_log_group.this.arn}:log-stream:*"]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:BatchGetItem",
+      "dynamodb:Scan",
+      "dynamodb:Query",
+      "dynamodb:ConditionCheckItem",
+    ]
+    resources = [aws_dynamodb_table.this.arn]
+  }
+}
+
+resource "aws_iam_policy" "this" {
+  name   = var.STACK_NAME
+  policy = data.aws_iam_policy_document.this.json
+}
+
+resource "aws_iam_role_policy_attachment" "this" {
+  role       = aws_iam_role.this.name
+  policy_arn = aws_iam_policy.this.arn
+}
+
+# Deploy the Lambda function.
+resource "aws_lambda_function" "this" {
+  function_name    = var.STACK_NAME
+  role             = aws_iam_role.this.arn
+  filename         = "lambda-function.zip"
+  source_code_hash = filebase64sha256("lambda-function.zip")
+  handler          = "lambda_function.lambda_handler"
+  runtime          = "python3.12"
+  architectures    = ["x86_64"]
+
+  logging_config {
+    log_group  = aws_cloudwatch_log_group.this.name
+    log_format = "Text"
+  }
+}
+
+resource "aws_lambda_function_url" "this" {
+  function_name      = aws_lambda_function.this.function_name
+  authorization_type = "NONE"
+}
