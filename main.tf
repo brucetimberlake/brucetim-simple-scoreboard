@@ -7,6 +7,13 @@ terraform {
       version = ">= 5.80"
     }
   }
+
+  # NOTE: Don't forget to change the bucket and table names!
+  backend "s3" {
+    bucket         = "s3-tfstate-statestoragebucket-qwy1pbk7xolq" #created from cloudformation stack
+    key            = "brucetim-simple-scoreboard.tfstate"
+    dynamodb_table = "s3-tfstate-StateLockingTable-1RMZJCMM384Y4"
+  }
 }
 
 provider "aws" {
@@ -35,14 +42,13 @@ resource "aws_dynamodb_table" "this" {
   }
 }
 
-
 # Grant the Lambda function read-only access to players' scores.
 data "aws_iam_policy_document" "lambda_trust" {
   statement {
     effect = "Allow"
     principals {
       type        = "Service"
-      identifiers = ["lambda.${data.aws_partition.current.dns_suffix}"] # allows other things like govcloud
+      identifiers = ["lambda.${data.aws_partition.current.dns_suffix}"]
     }
     actions = ["sts:AssumeRole"]
   }
@@ -90,7 +96,7 @@ resource "aws_iam_role_policy_attachment" "this" {
 resource "aws_lambda_function" "this" {
   function_name    = var.STACK_NAME
   role             = aws_iam_role.this.arn
-  filename         = "lambda-function.zip"  # filesize limitations with this method
+  filename         = "lambda-function.zip"
   source_code_hash = filebase64sha256("lambda-function.zip")
   handler          = "lambda_function.lambda_handler"
   runtime          = "python3.12"
