@@ -42,7 +42,7 @@ data "aws_iam_policy_document" "lambda_trust" {
     effect = "Allow"
     principals {
       type        = "Service"
-      identifiers = ["lambda.${data.aws_partition.current.dns_suffix}"]
+      identifiers = ["lambda.${data.aws_partition.current.dns_suffix}"] # allows other things like govcloud
     }
     actions = ["sts:AssumeRole"]
   }
@@ -90,7 +90,7 @@ resource "aws_iam_role_policy_attachment" "this" {
 resource "aws_lambda_function" "this" {
   function_name    = var.STACK_NAME
   role             = aws_iam_role.this.arn
-  filename         = "lambda-function.zip"
+  filename         = "lambda-function.zip"  # filesize limitations with this method
   source_code_hash = filebase64sha256("lambda-function.zip")
   handler          = "lambda_function.lambda_handler"
   runtime          = "python3.12"
