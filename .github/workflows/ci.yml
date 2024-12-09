@@ -1,0 +1,28 @@
+---
+name: Continuous Integration
+
+# Trigger this workflow manually, by pushing commits to any branch, or
+# by filing a pull request.
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      # Get the latest code.
+      - uses: actions/checkout@v4
+
+      # Create a dummy Lambda function package for validation
+      # purposes.
+      - run: touch lambda-function.zip
+
+      # Run the linters.
+      - uses: pre-commit/action@v3.0.1
+
