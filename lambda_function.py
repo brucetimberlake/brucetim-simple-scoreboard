@@ -6,7 +6,7 @@ template_html = (Path(__file__).parent / "template.html").read_text()
 
 # Connect to DynamoDB.
 dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table("brucetim-starter-scoreboard")
+table = dynamodb.Table("brucetim-simple-scoreboard")
 
 def lambda_handler(event, context):
     # Display the scores in table format.
