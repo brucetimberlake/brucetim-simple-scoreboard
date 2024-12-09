@@ -1,5 +1,7 @@
 ## Local additions
 
+.vscode/
+
 # API documentation gets generated from docstrings in code.
 docs/apidocs/
 
